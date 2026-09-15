@@ -132,7 +132,8 @@ export class TableApi extends ItemApi<TableData> {
 		this.data.lightEmissionScale = v
 	}
 	get NightDay() {
-		return quantizeUnsignedPercent(this.data.globalEmissionScale!)
+		// real VPX defaults m_globalEmissionScale to 1.f when the table file has no GLES tag
+		return quantizeUnsignedPercent(this.data.globalEmissionScale ?? 1)
 	}
 	set NightDay(v) {
 		this.data.globalEmissionScale = dequantizeUnsignedPercent(v)

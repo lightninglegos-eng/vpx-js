@@ -129,6 +129,25 @@ export class VpmController {
 	}
 
 	private async _loadGame(name: string): Promise<void> {
+		const existing = this.player.getPhysics().emu
+		if (existing?.isInitialized() && existing instanceof PinMameEmulator) {
+			this.replay(existing as unknown as IEmulator)
+			this.emulator = existing
+			return
+		}
+		// A locally-available ROM (window/global __pendingRom, ?rom= param, or a local file path)
+		// always wins over a live network fetch, even for games wpc-emu's bundled GamelistDB knows
+		// about - fetchRom() never throws, it returns an empty array when nothing local is found.
+		const localRom = await this.fetchRom(name)
+		if (localRom.length) {
+			const emu = new PinMameEmulator()
+			this.replay(emu as unknown as IEmulator)
+			this.emulator = emu
+			await emu.loadGame(name, localRom)
+			this.player.setEmulator(emu)
+			this.replay(emu as unknown as IEmulator)
+			return
+		}
 		if (GamelistDB.getByPinmameName(name)) {
 			const { wpcDbEntry, romFile } = await downloadGameEntry(name)
 			await (this.emulator as Emulator).loadGame(wpcDbEntry, romFile)
@@ -136,17 +155,10 @@ export class VpmController {
 			this.player.setEmulator(this.emulator)
 			return
 		}
-		const existing = this.player.getPhysics().emu
-		if (existing?.isInitialized() && existing instanceof PinMameEmulator) {
-			this.replay(existing as unknown as IEmulator)
-			this.emulator = existing
-			return
-		}
 		const emu = new PinMameEmulator()
 		this.replay(emu as unknown as IEmulator)
 		this.emulator = emu
-		const rom = await this.fetchRom(name)
-		await emu.loadGame(name, rom)
+		await emu.loadGame(name, localRom)
 		this.player.setEmulator(emu)
 		this.replay(emu as unknown as IEmulator)
 	}

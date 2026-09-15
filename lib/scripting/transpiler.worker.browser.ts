@@ -33,6 +33,21 @@ if (typeof (globalThis as any).localStorage === 'undefined') {
 	}
 }
 ;(self as any).localStorage = (globalThis as any).localStorage
+if (typeof (globalThis as any).assert !== 'function') {
+	const assertFn: any = (value: unknown, message?: string) => {
+		if (!value) throw new Error(message || 'Assertion failed')
+	}
+	assertFn.ok = assertFn
+	assertFn.equal = (a: unknown, b: unknown, m?: string) => {
+		// biome-ignore lint/suspicious/noDoubleEquals: assert.equal is loose equality by design, unlike strictEqual
+		if (a != b) throw new Error(m || `${a} != ${b}`)
+	}
+	assertFn.strictEqual = (a: unknown, b: unknown, m?: string) => {
+		if (a !== b) throw new Error(m || `${a} !== ${b}`)
+	}
+	;(globalThis as any).assert = assertFn
+	;(self as any).assert = assertFn
+}
 
 let transpileInWorker: ((p: any) => Promise<string>) | undefined
 const preload = import('./transpiler-worker-core.js')
@@ -51,7 +66,7 @@ self.onmessage = async (e: MessageEvent) => {
 			;(self as any).postMessage({
 				id: (e as any).data?.id,
 				ok: false,
-				error: err?.message ?? String(err) + (err?.stack ? '\n' + err.stack : ''),
+				error: (err?.message ?? String(err)) + (err?.stack ? '\n' + err.stack : ''),
 			})
 			return
 		}
@@ -64,7 +79,7 @@ self.onmessage = async (e: MessageEvent) => {
 		;(self as any).postMessage({
 			id,
 			ok: false,
-			error: err?.message ?? String(err) + (err?.stack ? '\n' + err.stack : ''),
+			error: (err?.message ?? String(err)) + (err?.stack ? '\n' + err.stack : ''),
 		})
 	}
 }

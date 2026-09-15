@@ -175,7 +175,10 @@ export class Table implements IScriptable<TableApi>, IRenderable<TableState> {
 		return name ? this.textures[name.toLowerCase()] : undefined
 	}
 	public getMaterial(name?: string): Material | undefined {
-		if (!name || !this.data) return undefined
+		// a script can assign an unresolved/Empty VBScript value here (e.g. an array slot
+		// that was never populated) - real VBScript coerces Empty to "" harmlessly, so treat
+		// any non-string the same as "no material" rather than crashing on it
+		if (typeof name !== 'string' || !name || !this.data) return undefined
 		const mats = this.data.materials
 		const lc = name.toLowerCase()
 		return (

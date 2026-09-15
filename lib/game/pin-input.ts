@@ -301,6 +301,7 @@ export class PinInput {
 		}>
 		const withBall = kickers.filter(k => (k as unknown as { hit?: { ball?: unknown } }).hit?.ball)
 		if (!withBall.length) {
+			if (this.player.getPhysics().balls.length > 0) return
 			const plunger = Object.values(this.table.plungers)[0] as unknown as
 				| { getApi(): { CreateBall(): unknown } }
 				| undefined
