@@ -185,7 +185,15 @@ function ppConstructorMemberDeclaration(node: ESIToken): unknown {
 }
 
 function ppRegularPropertyMemberDeclaration(node: ESIToken): unknown {
-	return node.children[1].estree
+	// The leading access modifier is optional in the grammar (matching Sub/Function), so its
+	// presence shifts which child index holds the accessor declaration - find it by type
+	// instead of assuming a fixed position, same approach ppConstructorMemberDeclaration uses.
+	for (const child of node.children) {
+		if (child.type === 'PropertyAccessorDeclaration') {
+			return child.estree
+		}
+	}
+	return null
 }
 
 function ppPropertyGetDeclaration(node: ESIToken): unknown {

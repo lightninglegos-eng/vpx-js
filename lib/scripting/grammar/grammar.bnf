@@ -130,7 +130,7 @@ BoundList ::= Bound ( Comma Bound )*
 Bound ::= Expression
 
 PropertyMemberDeclaration ::= RegularPropertyMemberDeclaration
-RegularPropertyMemberDeclaration ::= PropertyModifier WS 'Property' WS PropertyAccessorDeclaration 'End' WS 'Property' StatementTerminator
+RegularPropertyMemberDeclaration ::= (PropertyModifier WS)? 'Property' WS PropertyAccessorDeclaration 'End' WS 'Property' StatementTerminator
 AutoPropertyModifier ::= AccessModifier
 PropertyModifier ::= AutoPropertyModifier
 PropertyAccessorDeclaration ::= PropertyGetDeclaration | PropertyLetDeclaration | PropertySetDeclaration
