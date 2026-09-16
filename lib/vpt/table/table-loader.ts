@@ -7,6 +7,7 @@ import { Collection } from '../collection/collection.js'
 import type { Item } from '../item.js'
 import type { ItemData } from '../item-data.js'
 import { ITEM_KEYS, ITEM_REGISTRY, loadItemByType } from '../item-registry.js'
+import { Sound } from '../sound.js'
 import { Texture } from '../texture.js'
 import type { TableLoadOptions } from './table.js'
 import { TableData } from './table-data.js'
@@ -17,10 +18,12 @@ const decoder = new TextDecoder()
 // Uses scheduler.yield() when available, otherwise setTimeout.
 const YIELD_EVERY_GAME_ITEMS = 32
 const YIELD_EVERY_TEXTURES = 16
+const YIELD_EVERY_SOUNDS = 16
 const YIELD_EVERY_COLLECTIONS = 16
 
 const MAX_CONCURRENCY_GAME_ITEMS = 4
 const MAX_CONCURRENCY_TEXTURES = 6
+const MAX_CONCURRENCY_SOUNDS = 6
 const MAX_CONCURRENCY_COLLECTIONS = 4
 
 function hardwareConcurrency(): number {
@@ -50,6 +53,7 @@ export class TableLoader {
 						out.textures = []
 						logger().debug('[Table.load] Skipped %s textures (play without textures)', out.data.numTextures)
 					}
+					await this.loadSounds(out, gameStg, out.data.numSounds)
 					await this.loadCollections(out, gameStg, out.data.numCollections)
 				}
 				if (opts.loadTableScript) {
@@ -148,6 +152,29 @@ export class TableLoader {
 		}
 	}
 
+	private async loadSounds(out: LoadedTable, storage: Storage, numItems: number): Promise<void> {
+		progress().show('Loading sounds')
+		out.sounds = []
+		if (numItems === 0) return
+		const concurrency = Math.min(MAX_CONCURRENCY_SOUNDS, hardwareConcurrency())
+		const results: Sound[] = new Array(numItems)
+		let next = 0
+		const workers = Array.from({ length: Math.min(concurrency, numItems) }, async () => {
+			while (true) {
+				const i = next++
+				if (i >= numItems) break
+				results[i] = await Sound.fromStorage(storage, `Sound${i}`)
+				if ((i + 1) % YIELD_EVERY_SOUNDS === 0) await this.yield()
+			}
+		})
+		await Promise.all(workers)
+		for (let i = 0; i < numItems; i++) {
+			const snd = results[i]!
+			out.sounds.push(snd)
+			progress().details(snd.getName())
+		}
+	}
+
 	private async loadTableInfo(out: LoadedTable): Promise<void> {
 		const stg = this.doc.storage('TableInfo')
 		out.info = {}
@@ -192,6 +219,7 @@ export interface LoadedTable {
 	items: Record<string, Item<ItemData>>
 	tableScript?: string
 	textures?: Texture[]
+	sounds?: Sound[]
 	collections?: Collection[]
 	surfaces?: import('../surface/surface.js').Surface[]
 	primitives?: import('../primitive/primitive.js').Primitive[]

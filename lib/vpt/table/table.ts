@@ -40,6 +40,7 @@ import type { Plunger } from '../plunger/plunger.js'
 import type { Primitive } from '../primitive/primitive.js'
 import type { Ramp } from '../ramp/ramp.js'
 import type { Rubber } from '../rubber/rubber.js'
+import type { Sound } from '../sound.js'
 import type { Spinner } from '../spinner/spinner.js'
 import type { Surface } from '../surface/surface.js'
 import type { Textbox } from '../textbox/textbox.js'
@@ -69,6 +70,7 @@ export class Table implements IScriptable<TableApi>, IRenderable<TableState> {
 	private itemIndex?: Record<string, string>
 
 	public readonly textures: Record<string, Texture> = {}
+	public readonly sounds: Record<string, Sound> = {}
 	public readonly collections: Record<string, Collection> = {}
 	public readonly bumpers: Record<string, Bumper> = {}
 	public readonly flippers: Record<string, Flipper> = {}
@@ -119,6 +121,11 @@ export class Table implements IScriptable<TableApi>, IRenderable<TableState> {
 			loaded as unknown as Record<string, unknown>,
 			'textures',
 			this.textures as unknown as Record<string, unknown>,
+		)
+		this.populateFromLoaded(
+			loaded as unknown as Record<string, unknown>,
+			'sounds',
+			this.sounds as unknown as Record<string, unknown>,
 		)
 		this.populateFromLoaded(
 			loaded as unknown as Record<string, unknown>,
@@ -173,6 +180,9 @@ export class Table implements IScriptable<TableApi>, IRenderable<TableState> {
 	}
 	public getTexture(name?: string): Texture | undefined {
 		return name ? this.textures[name.toLowerCase()] : undefined
+	}
+	public getSound(name?: string): Sound | undefined {
+		return name ? this.sounds[name.toLowerCase()] : undefined
 	}
 	public getMaterial(name?: string): Material | undefined {
 		// a script can assign an unresolved/Empty VBScript value here (e.g. an array slot
