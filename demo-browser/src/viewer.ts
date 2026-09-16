@@ -109,9 +109,18 @@ function cullExcessLights(root: any, maxLights: number) {
 	lights.sort((a: any, b: any) => (b.intensity || 0) - (a.intensity || 0))
 	let culled = 0
 	for (const light of lights.slice(maxLights)) {
-		light.visible = false
+		// Suppress the light's own render contribution at this snapshot via intensity alone -
+		// many lights (bumper/insert lights especially) are legitimately at zero intensity
+		// here simply because they're off by default and only turn on later in response to
+		// gameplay. Two things this must NOT do, both tried and reverted: (1) removing the
+		// node from the scene graph permanently breaks LightUpdater/applyLighting's later
+		// state updates, since they look up the 'light' child by traversing obj.children -
+		// once removed, gone forever; (2) setting `visible = false` has the same permanent-
+		// breakage effect, since applyLighting/_applyLightToTarget only ever touches
+		// `.intensity`/`.color`, never `.visible` - a light left invisible here would stay
+		// invisible even after a later intensity change turned it back on. Zero intensity
+		// alone already fully suppresses a PointLight's contribution, so it's sufficient.
 		light.intensity = 0
-		light.parent?.remove(light)
 		culled++
 	}
 	return { before: lights.length, after: maxLights, culled }
